@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import Versions from './components/Versions.vue'
+import NavBar from './components/NavBar/NavBar.vue'
 </script>
 
 <template>
+  <NavBar></NavBar>
   <Versions></Versions>
-
-  <svg class="hero-logo" viewBox="0 0 900 300">
+  <svg class="hero-logo" viewBox="0 0 900 300" style="-webkit-app-region: drag">
     <use xlink:href="./assets/icons.svg#electron" />
   </svg>
   <h2 class="hero-text">You've successfully created an Electron project with Vue and TypeScript</h2>

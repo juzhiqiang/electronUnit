@@ -1,17 +1,22 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+// 创建浏览器窗口
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
+    frame: true,
+    titleBarStyle: 'hidden',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
+      webSecurity: false,
+      nodeIntegration: true,
+      contextIsolation: false,
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
@@ -26,8 +31,24 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  ipcMain.on('detach:service', async (event, arg: { type: string }) => {
+    operation[arg.type]()
+  })
+
+  const operation = {
+    minimize: () => {
+      mainWindow.focus()
+      mainWindow.minimize()
+    },
+    maximize: () => {
+      mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+    },
+    close: () => {
+      mainWindow.close()
+    }
+  }
+
+  // 开发环境价值本地服务文件，正式环境加载打包后文件
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,9 +56,8 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+//此方法将在Electron完成后调用
+//某些API只能在此事件发生后使用。
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
@@ -58,9 +78,7 @@ app.whenReady().then(() => {
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// 非macos下关闭窗口逻辑
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
